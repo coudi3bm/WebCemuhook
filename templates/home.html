@@ -1,0 +1,70 @@
+<html>
+
+<head>
+    <title>WebCemuhook</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <style>
+        .data {
+            margin-top: 8px;
+        }
+
+        .data p {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>WebCemuhook</h1>
+
+    <div>
+        <label for="stop">Stop send data</label>
+        <input type="checkbox" id="stop" name="stop" value="yes">
+    </div>
+
+    <div class="data">
+        <p id="x" />
+        <p id="y" />
+        <p id="z" />
+    </div>
+    <script>
+        let wss = new WebSocket("wss://" + window.location.host + "/ws")
+        if (window.DeviceMotionEvent) {
+            wss.onopen = (e) => {
+                window.addEventListener("devicemotion", (event) => {
+                    console.log(event)
+                    let msg = {
+                        // getTime() return milliseconds but we need microseconds
+                        timeStamp: new Date().getTime() * 1000,
+                        rotationRate: {
+                            x: Number(event.rotationRate.alpha),
+                            y: Number(event.rotationRate.gamma) * -1,
+                            z: Number(event.rotationRate.beta)
+                        }
+                    }
+
+                    if (document.getElementById("stop").checked) {
+                        msg.rotationRate = {
+                            x: 0,
+                            y: 0,
+                            z: 0
+                        }
+                    }
+
+                    console.log(msg)
+                    document.getElementById("x").innerHTML = "x: " + msg.rotationRate.x.toFixed(2)
+                    document.getElementById("y").innerHTML = "y: " + msg.rotationRate.y.toFixed(2)
+                    document.getElementById("z").innerHTML = "z: " + msg.rotationRate.z.toFixed(2)
+
+                    wss.send(JSON.stringify(msg))
+                }, false)
+            }
+        } else {
+            alert("GyroScope not supported")
+        }
+    </script>
+</body>
+
+</html>
